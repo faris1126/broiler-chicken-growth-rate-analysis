@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broiler Growth Analysis Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root { --primary: #0f172a; --accent: #10b981; --text: #334155; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px; line-height: 1.6; }
+        .container { max-width: 900px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2 { color: var(--primary); border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+        .math-block { background: #f1f5f9; padding: 15px; border-radius: 8px; text-align: center; font-size: 1.2rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .highlight { color: var(--accent); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Broiler Chicken Growth Rate Analysis</h1>
+    
+    <div class="card">
+        <h2>Bioscience Problem</h2>
+        <p>In Malaysia's poultry sector, monitoring weight is not enough. To optimize feed conversion efficiency, farmers must track the <strong>rate of change</strong> in body weight. This project uses derivatives to identify the "Critical Growth Phase" for Ross 308/Cobb broilers.</p>
+    </div>
+
+    <div class="card">
+        <h2>Mathematical Model</h2>
+        <div class="math-block">
+            Weight Function: \[ f(x) = \frac{3.2}{1 + e^{-0.12(x-25)}} \]
+            Derivative (Growth Rate): \[ f'(x) = \frac{0.384 e^{-0.12(x-25)}}{(1 + e^{-0.12(x-25)})^2} \]
+        </div>
+        <p>Here, \( f(x) \) is body weight (kg) at age \( x \), and \( f'(x) \) is the instantaneous growth rate (kg/day).</p>
+    </div>
+
+    <div class="card">
+        <canvas id="growthChart"></canvas>
+        <p style="text-align:center; font-style:italic;">Click on the chart to analyze specific growth data.</p>
+    </div>
+
+    <div class="card" id="analysisPanel">
+        <h3>Interactive Analysis</h3>
+        <p>Select a data point on the chart above to view biological interpretations.</p>
+    </div>
+
+    <div class="card">
+        <h2>Key Findings (Data: 1-42 Days)</h2>
+        <div id="findings"></div>
+        <p><small>Sources: Cobb-Vantress, Aviagen Ross 308, DVS Malaysia.</small></p>
+    </div>
+
+    <div class="card">
+        <h2>Understanding Derivatives</h2>
+        <p>A <strong>derivative</strong> represents the slope of the growth curve. If the weight is increasing, the derivative is positive. When the derivative reaches its peak, it identifies the day of maximum biological performance—a key metric for adjusting nutrient density in the diet.</p>
+    </div>
+
+    <div class="card">
+        <h2>Presentation Summary</h2>
+        <ul>
+            <li><strong>Problem:</strong> Non-linear growth requires precision management.</li>
+            <li><strong>Model:</strong> Gompertz/Logistic growth function models actual poultry behavior.</li>
+            <li><strong>Application:</strong> \( f'(x) \) predicts when the flock requires peak caloric intake.</li>
+            <li><strong>Farm Impact:</strong> Better timing leads to lower FCR and higher profit margins.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const f = (x) => 3.2 / (1 + Math.exp(-0.12 * (x - 25)));
+    const df = (x) => (0.384 * Math.exp(-0.12 * (x - 25))) / Math.pow((1 + Math.exp(-0.12 * (x - 25))), 2);
+
+    const labels = Array.from({length: 43}, (_, i) => i);
+    const chart = new Chart(document.getElementById('growthChart'), {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Weight (kg)', data: labels.map(f), borderColor: '#10b981', tension: 0.3 }] },
+        options: {
+            onClick: (e, elements) => {
+                if(elements.length > 0) {
+                    const day = labels[elements[0].index];
+                    const weight = f(day);
+                    const rate = df(day);
+                    document.getElementById('analysisPanel').innerHTML = `
+                        <h3>Results for Day ${day}</h3>
+                        <p><strong>Weight:</strong> ${weight.toFixed(2)} kg</p>
+                        <p><strong>Growth Rate:</strong> ${(rate*1000).toFixed(0)} g/day</p>
+                        <p><strong>Interpretation:</strong> ${rate > 0.08 ? 'Rapid Growth Phase: Ensure optimal ventilation and feed supply.' : 'Maturation Phase: Growth is plateauing.'}</p>
+                    `;
+                }
+            }
+        }
+    });
+
+    let maxR = 0, peakD = 0;
+    labels.forEach(d => { if(df(d) > maxR) { maxR = df(d); peakD = d; } });
+    document.getElementById('findings').innerHTML = `
+        <p>Peak Growth Occurs on: <strong>Day ${peakD}</strong></p>
+        <p>Maximum Growth Rate: <strong>${(maxR*1000).toFixed(0)} g/day</strong></p>
+    `;
+</script>
+</body>
+</html>
